@@ -2,8 +2,10 @@ import 'package:airaware/homepage/widgets/sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
+import 'package:airaware/backend/jstodart.dart';
+import 'package:airaware/backend/data_model.dart';
 
-// import 'package:airaware/homepage/widgets/modal.dart';
 class MapWidget extends StatefulWidget {
   const MapWidget({super.key});
 
@@ -14,14 +16,23 @@ class MapWidget extends StatefulWidget {
 class _MapWidgetState extends State<MapWidget> {
   List<Marker> _markers = [];
 
-  void updateMarkers(List<dynamic> locations) {
-    List<Marker> markers = [];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Listen for changes in the DataProvider
+    final dataProvider = Provider.of<DataProvider>(context);
+    if (!dataProvider.isLoading) {
+      updateMarkers(dataProvider.data);
+    }
+  }
 
+  void updateMarkers(List<DataItem> locations) {
+    List<Marker> markers = [];
     locations.forEach((item) {
-      final lat = item['latitude'];
-      final lon = item['longitude'];
-      final int value = item['aqi']; // Assuming each item has an 'aqi' field
-      final maxele = item['maxele'];
+      final lat = item.latitude;
+      final lon = item.longitude;
+      final int value = item.aqi;
+      final maxele = item.maxele;
       if (lat != null && lon != null) {
         markers.add(
           Marker(
@@ -89,7 +100,7 @@ class _MapWidgetState extends State<MapWidget> {
     }
   }
 
-  void _onMarkerTapped(dynamic item) {
+  void _onMarkerTapped(DataItem item) {
     // Handle marker tap event here
     // 'item' contains the data of the tapped marker
     Sheet.showModalBottomSheetWithData(context, item);
@@ -98,41 +109,33 @@ class _MapWidgetState extends State<MapWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return FlutterMap(
-      options: MapOptions(
-        center: LatLng(22.0, 77.0),
-        zoom: 5.5,
-        interactiveFlags:
-            InteractiveFlag.all & ~InteractiveFlag.rotate, // Disable rotation
-        maxBounds: LatLngBounds(
-          LatLng(8.0, 68.0), // Southwest corner of India
-          LatLng(37.0, 97.0), // Northeast corner of India
-        ),
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: ['a', 'b', 'c'],
-        ),
-        MarkerLayer(
-          markers: _markers,
-        ),
-      ],
+    return Consumer<DataProvider>(
+      builder: (context, dataProvider, child) {
+        if (dataProvider.isLoading) {
+          return Center(child: CircularProgressIndicator());
+        } else {
+          return FlutterMap(
+            options: MapOptions(
+              center: LatLng(22.0, 77.0),
+              zoom: 5.5,
+              interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate, // Disable rotation
+              maxBounds: LatLngBounds(
+                LatLng(8.0, 68.0), // Southwest corner of India
+                LatLng(37.0, 97.0), // Northeast corner of India
+              ),
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                subdomains: ['a', 'b', 'c'],
+              ),
+              MarkerLayer(
+                markers: _markers,
+              ),
+            ],
+          );
+        }
+      },
     );
-  }
-}
-
-// Global key to access the state of MapWidget
-final GlobalKey<_MapWidgetState> mapWidgetKey = GlobalKey<_MapWidgetState>();
-
-class MapWidgetWithGlobalKey extends StatefulWidget {
-  @override
-  _MapWidgetWithGlobalKeyState createState() => _MapWidgetWithGlobalKeyState();
-}
-
-class _MapWidgetWithGlobalKeyState extends State<MapWidgetWithGlobalKey> {
-  @override
-  Widget build(BuildContext context) {
-    return MapWidget(key: mapWidgetKey);
   }
 }

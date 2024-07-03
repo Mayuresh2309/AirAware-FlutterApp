@@ -3,22 +3,24 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:airaware/homepage/widgets/map.dart';
 import 'package:flutter/material.dart';
-
-
-
+import 'package:airaware/Explorepage/explore.dart';
+import 'package:airaware/Statpage/stats.dart';
+import 'data_model.dart';
 class DataProvider with ChangeNotifier {
-  List<dynamic> _data = [];
+  List<DataItem> _data = []; // Updated to List<DataItem>
   bool _isLoading = true;
 
-  List<dynamic> get data => _data;
+  List<DataItem> get data => _data; // Add this getter
   bool get isLoading => _isLoading;
- Future<void> fetchData() async {
+
+  Future<void> fetchData() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      List<dynamic> result = await apidata();
-      _data = result.isNotEmpty ? result[0] : [];
+      List<DataItem> result =
+          await apidata(); // Ensure this returns List<DataItem>
+      _data = result;
     } catch (error) {
       print("Error: $error");
       _data = [];
@@ -28,15 +30,18 @@ class DataProvider with ChangeNotifier {
     notifyListeners();
   }
 }
-
-Future<List<dynamic>> apidata() async {
-  print("check 1");
+Future<List<DataItem>> apidata() async {
+  // print("check 1");
   // Sample key
   // const api="579b464db66ec23bdd0000011c4b6fb8f22e4da36019aceed9576683"; //2nd api
   const api = "579b464db66ec23bdd00000139aeb6041bfa4c7263cda886ed404225";
   final offset = 0;
   final limit = 1000;
   final List<Future<List<dynamic>>> promises = [];
+  // print("achahhahaha jiiiii");
+  // Access the StatsScreen state using the global key and call updateMarkers
+  // if (statsKey.currentState != null) {
+  // }
 
   for (int i = 0; i < 4; i++) {
     promises.add(getData(api, offset + i * 1000, limit).then((data) {
@@ -47,17 +52,24 @@ Future<List<dynamic>> apidata() async {
       return []; // Return an empty list in case of an error to avoid breaking Future.wait
     }));
   }
+Map<String, dynamic> convertMap(Map<dynamic, dynamic> inputMap) {
+  Map<String, dynamic> outputMap = {};
 
+  inputMap.forEach((key, value) {
+    outputMap[key.toString()] = value;
+  });
+
+  return outputMap;
+}
   return Future.wait(promises).then((arrayOfData) {
-    // print(arrayOfData);
     final combined = combineUniqueById(arrayOfData.expand((i) => i).toList());
-    print("combined data ${combined.runtimeType}");
-    // print("returning actual data ${combined.length}");
-    // updateMarkers(combined);
-    mapWidgetKey.currentState?.updateMarkers(combined);
+    // mapWidgetKey.currentState?.updateMarkers(combined);
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   statsKey.currentState?.updateMarkers(combined);
+    // });
+    // print(combined[0]);
 
-    return [combined];
-
+    return combined.map((item) => DataItem.fromJson(item)).toList();
   }).catchError((error) {
     print("Error: $error");
     return []; // Return an empty list in case of an error
@@ -136,7 +148,7 @@ List<dynamic> combineUniqueById(List<dynamic> arrays) {
 
     if (stationData[station]['pollutants'][pollutantId] == null) {
       stationData[station]['pollutants'][pollutantId] = {
-        'pollutant_avg': 0,
+        'pollutant_avg': 0.0,
         'pollutant_max': 0.0,
         'pollutant_min': 0.0,
       };
@@ -162,7 +174,7 @@ List<dynamic> combineUniqueById(List<dynamic> arrays) {
   });
   stationData.forEach((key, item) {
     item!['aqi'] = calmax(item['pollutants']);
-    item!['maxele']=maxele(item['pollutants'], item['aqi']);
+    item!['maxele'] = maxele(item['pollutants'], item['aqi']);
   });
 
   // Sort stations alphabetically based on state, city, and station4
@@ -256,7 +268,7 @@ String maxele(Map<dynamic, dynamic> pollutants, int max) {
     return "no2";
   } else if (pollutants['OZONE']?['pollutant_max'] != null &&
       max == pollutants['OZONE']?['pollutant_max']) {
-        return "Ozone";
+    return "Ozone";
   } else if (pollutants['PM10']?['pollutant_avg'] != null &&
       max == pollutants['PM10']?['pollutant_avg']) {
     return "pm10";
@@ -269,7 +281,7 @@ String maxele(Map<dynamic, dynamic> pollutants, int max) {
   } else if (pollutants['OZONE']?['pollutant_max'] != null &&
       max == pollutants['OZONE']?['pollutant_max']) {
     return "Ozone";
-      }
-      
+  }
+
   return "none";
 }

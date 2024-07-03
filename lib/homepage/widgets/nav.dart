@@ -16,7 +16,7 @@ class Nav extends StatelessWidget {
     final data = dataProvider.data;
     List<String> StationList = [];
     data.forEach((element) {
-      StationList.add(element['station']
+      StationList.add(element.station
           .toString()); // Assuming 'station' is a property of each element
     });
     final height = MediaQuery.of(context).size.height;
@@ -28,7 +28,7 @@ class Nav extends StatelessWidget {
           .toList();
       data.forEach((element) {
         try{
-        if ( element['station'].toString() == filteredWords[0]) {
+        if ( element.station.toString() == filteredWords[0]) {
           Sheet.showModalBottomSheetWithData(context, element);
         }
         }catch(e){};

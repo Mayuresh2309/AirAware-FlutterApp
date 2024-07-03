@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:airaware/backend/jstodart.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
+import 'package:airaware/homepage/widgets/bottomtab.dart';
 
 void main() {
   runApp(
@@ -21,10 +22,41 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Home(),
+      home: Scaffold(
+        body: Consumer<DataProvider>(
+          builder: (context, dataProvider, child) {
+            if (dataProvider.isLoading) {
+              return Center(child: CircularProgressIndicator());
+            } else {
+              return BottomTab();
+            }
+          },
+        ),
+      ),
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 class MyHomePage extends StatelessWidget {

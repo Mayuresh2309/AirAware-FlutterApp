@@ -15,6 +15,7 @@ class Modal extends StatefulWidget {
 class _Modal1State extends State<Modal> with TickerProviderStateMixin {
   double? maxY;
   double? stepValue;
+  final List<int> aqiValues = [0, 50, 100, 200, 300, 400, 500];
 
   @override
   void initState() {
@@ -26,12 +27,12 @@ class _Modal1State extends State<Modal> with TickerProviderStateMixin {
     try {
       double maxPollutantValue = 0.0;
       widget.data['pollutants'].forEach((key, value) {
-        if (value['pollutant_avg'] > maxPollutantValue) {
-          maxPollutantValue = value['pollutant_avg'].toDouble();
+        if (value['pollutantAvg'] > maxPollutantValue) {
+          maxPollutantValue = value['pollutantAvg'].toDouble();
         }
         if (key.toString() == "OZONE" || key.toString() == "CO") {
-          if (value['pollutant_max'] > maxPollutantValue) {
-            maxPollutantValue = value['pollutant_max'].toDouble();
+          if (value['pollutantMax'] > maxPollutantValue) {
+            maxPollutantValue = value['pollutantMax'].toDouble();
           }
         }
       });
@@ -63,24 +64,25 @@ class _Modal1State extends State<Modal> with TickerProviderStateMixin {
             if (widget.state == 1) ...[
               SizedBox(height: 30),
             ] else ...[
-             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [ SizedBox(
-                width:50, // Adjust width as needed
-                child: Container(
-                  height: 5,
-                  margin: EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: Color.fromARGB(255, 84, 84, 84),
-                    borderRadius: BorderRadius.circular(2),
-                    
-                  ),
-                ),
-              )],
-             )
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 50, // Adjust width as needed
+                    child: Container(
+                      height: 5,
+                      margin: EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(
+                        color: Color.fromARGB(255, 84, 84, 84),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  )
+                ],
+              )
             ],
             Text(
-              "${widget.data['station']}",
+              "${widget.data.station}",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
             ),
@@ -97,17 +99,21 @@ class _Modal1State extends State<Modal> with TickerProviderStateMixin {
             Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Color.fromARGB(187, 255, 162, 1),
+                color: getAqiInfo(widget.data.aqi.toInt())['color'],
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Center(
-                child: Text(
-                  "AQI: ${widget.data['aqi']}",
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                ),
-              ),
+                  child: Column(
+                children: [
+                  Text(
+                    "AQI: ${widget.data.aqi.toInt()}",
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                  ),
+                  Text("${getAqiInfo(widget.data.aqi.toInt())['level']}")
+                ],
+              )),
             ),
-            SizedBox(height: 15),
+            SizedBox(height: 20),
             Text(
               "Pollutants in the last 24 hours",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -118,7 +124,7 @@ class _Modal1State extends State<Modal> with TickerProviderStateMixin {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children:
-                    widget.data['pollutants'].entries.map<Widget>((entry) {
+                    widget.data.pollutants.entries.map<Widget>((entry) {
                   return Row(
                     children: [
                       Card(
@@ -155,17 +161,17 @@ class _Modal1State extends State<Modal> with TickerProviderStateMixin {
                               ),
                               SizedBox(height: 10),
                               Text(
-                                "Average: ${entry.value['pollutant_avg'].toString()}",
+                                "Average: ${entry.value.pollutantAvg?.toString()}",
                                 style: TextStyle(fontSize: 16),
                               ),
                               SizedBox(height: 10),
                               Text(
-                                "Maximum: ${entry.value['pollutant_max'].toString()}",
+                                "Maximum: ${entry.value.pollutantMax?.toString()}",
                                 style: TextStyle(fontSize: 16),
                               ),
                               SizedBox(height: 10),
                               Text(
-                                "Minimum: ${entry.value['pollutant_min'].toString()}",
+                                "Minimum: ${entry.value.pollutantMin?.toString()}",
                                 style: TextStyle(fontSize: 16),
                               ),
                             ],
@@ -178,20 +184,25 @@ class _Modal1State extends State<Modal> with TickerProviderStateMixin {
               ),
             ),
             SizedBox(height: 20),
+            Text(
+              "Distribution ",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
             Container(
               height: 300,
               child: BarChart(
                 BarChartData(
-                  barGroups: widget.data['pollutants'].entries
+                  barGroups: widget.data.pollutants.entries
                       .map<BarChartGroupData>((entry) {
-                    double yVal = entry.value['pollutant_avg'];
+                    double yVal = entry.value.pollutantAvg;
                     if (entry.key.toString() == "OZONE" ||
                         entry.key.toString() == "CO") {
-                      yVal = entry.value['pollutant_max'];
+                      yVal = entry.value.pollutantMax;
                     }
 
                     return BarChartGroupData(
-                      x: widget.data['pollutants'].keys
+                      x: widget.data.pollutants.keys
                           .toList()
                           .indexOf(entry.key),
                       barRods: [
@@ -211,16 +222,16 @@ class _Modal1State extends State<Modal> with TickerProviderStateMixin {
                     bottomTitles: SideTitles(
                       showTitles: true,
                       getTextStyles: (value) => TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
+                        color: const Color.fromARGB(255, 64, 64, 64),
+                        fontWeight: FontWeight.normal,
                         fontSize: 14,
                       ),
                       margin: 8,
                       getTitles: (double value) {
                         int index = value.toInt();
                         if (index >= 0 &&
-                            index < widget.data['pollutants'].length) {
-                          return widget.data['pollutants'].keys.toList()[index];
+                            index < widget.data.pollutants.length) {
+                          return widget.data.pollutants.keys.toList()[index];
                         }
                         return '';
                       },
@@ -250,10 +261,129 @@ class _Modal1State extends State<Modal> with TickerProviderStateMixin {
                 ),
               ),
             ),
+            SizedBox(
+              height: 20,
+            ),
+            Text(
+              "Standard Value",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: Table(
+                    children: [
+                      // Header row
+                      TableRow(
+                        decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 255, 255, 255)),
+                        children: [
+                          Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Center(
+                                child: Text(
+                                  'AQI Value',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.normal,
+                                      color: Colors.black),
+                                ),
+                              )),
+                          Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Center(
+                                child: Text(
+                                  'Category',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.normal,
+                                      color: Colors.black),
+                                ),
+                              )),
+                        ],
+                      ),
+                      // Data rows
+                      ...aqiValues.map((aqi) {
+                        var aqiInfo = getAqiInfo(aqi);
+                        return TableRow(
+                          children: [
+                            Container(
+                                color: aqiInfo['color'].withOpacity(0.7),
+                                padding: EdgeInsets.all(4.0),
+                                child: Center(
+                                  child: Text(
+                                    ' $aqi',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                )),
+                            Container(
+                                color: aqiInfo['color'].withOpacity(0.7),
+                                padding: EdgeInsets.all(4.0),
+                                child: Center(
+                                  child: Text(
+                                    aqiInfo['level'],
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                )),
+                          ],
+                        );
+                      }).toList(),
+                    ],
+                  )),
+            )
           ],
         ),
       ),
     );
+  }
+
+  Map<String, dynamic> getAqiInfo(int aqi) {
+    if (aqi <= 0) {
+      return {
+        "level": "Aqi Can't Be Calulated",
+        "color": Color.fromARGB(250, 85, 85, 85) // Green
+      };
+    } else if (aqi <= 50) {
+      return {
+        "level": "Good",
+        "color": Color.fromARGB(239, 48, 221, 13) // Green
+      };
+    } else if (aqi <= 100) {
+      return {
+        "level": "Satisfactory",
+        "color": Color.fromARGB(237, 29, 103, 0) // Yellow
+      };
+    } else if (aqi <= 200) {
+      return {
+        "level": "Moderate",
+        "color": Color.fromARGB(241, 237, 209, 0) // Orange
+      };
+    } else if (aqi <= 300) {
+      return {
+        "level": "Poor",
+        "color": Color.fromARGB(230, 255, 123, 0) // Red
+      };
+    } else if (aqi <= 400) {
+      return {
+        "level": "Very Poor",
+        "color": Color.fromARGB(220, 212, 29, 29) // Purple
+      };
+    } else if (aqi <= 500) {
+      return {
+        "level": "Severe",
+        "color": Color.fromARGB(206, 111, 0, 0) // Maroon
+      };
+    } else {
+      return {
+        "level": "Invalid AQI value",
+        "color": Color.fromARGB(255, 0, 0, 0) // Black
+      };
+    }
   }
 
   Color getColor(String col) {
