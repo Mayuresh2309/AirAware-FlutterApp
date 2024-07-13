@@ -29,7 +29,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   final List<String> diseases = [
     'Asthma',
-    'Chronic obstructive pulmonary disease (COPD)',
+    'COPD',
     'Lung Cancer',
     'Bronchitis',
     "Emphysema",
@@ -37,15 +37,27 @@ class _ExploreScreenState extends State<ExploreScreen> {
     "Bronchiectasis",
     "Pleural effusion"
   ];
+
   final Map<String, int> diseaseAqiMap = {
     'Asthma': 150,
-    'Chronic obstructive pulmonary disease (COPD)': 100,
+    'COPD': 100,
     'Lung Cancer': 150,
     'Bronchitis': 50,
     "Emphysema": 150,
     "Influenza": 100,
     "Bronchiectasis": 50,
     "Pleural effusion": 200
+  };
+
+  final Map<String, String> diseaseRecommendations = {
+    'Asthma': 'Avoid outdoor activities and wear a mask if AQI is high.',
+    'COPD': 'Stay indoors with air purifiers on high AQI days.',
+    'Lung Cancer': 'Avoid areas with high pollution levels.',
+    'Bronchitis': 'Minimize outdoor exposure and stay hydrated.',
+    "Emphysema": 'Use air conditioning and avoid physical exertion outside.',
+    "Influenza": 'Stay indoors during high pollution and ensure vaccination.',
+    "Bronchiectasis": 'Keep windows closed and use air purifiers.',
+    "Pleural effusion": 'Monitor AQI closely and avoid strenuous activities.'
   };
 
   String? selectedDisease;
@@ -120,7 +132,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           return const Iterable<String>.empty();
                         }
                         return _locations
-                            .map((location) => location['station'] as String)
+                            .map((location) => location.station as String)
                             .where((station) => station
                                 .toLowerCase()
                                 .contains(textEditingValue.text.toLowerCase()));
@@ -157,12 +169,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         // Dummy AQI value for the location; replace this with actual AQI lookup logic
                         setState(() {
                           locationAqi =
-                              120; // For example purposes, replace with actual logic
+                              10; // For example purposes, replace with actual logic
                         });
                         checkLocationSafety();
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: Colors.teal,
+                        backgroundColor: Colors.teal,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -177,11 +189,22 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           color: isLocationSafe! ? Colors.green : Colors.red,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          isLocationSafe!
-                              ? 'The location is safe for you.'
-                              : 'The location is not safe for you.',
-                          style: TextStyle(color: Colors.white, fontSize: 18),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isLocationSafe!
+                                  ? 'The location is safe for ${selectedDisease} conditions.'
+                                  : 'The location is not safe for ${selectedDisease} conditions.',
+                              style: TextStyle(color: Colors.white, fontSize: 18),
+                            ),
+                            SizedBox(height: 8),
+                            if (selectedDisease != null)
+                              Text(
+                                diseaseRecommendations[selectedDisease!]!,
+                                style: TextStyle(color: Colors.white, fontSize: 16),
+                              ),
+                          ],
                         ),
                       ),
                   ],
