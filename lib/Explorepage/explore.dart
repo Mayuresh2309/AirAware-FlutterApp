@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:airaware/backend/jstodart.dart';
+import 'package:airaware/backend/data_model.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({Key? key}) : super(key: key);
@@ -11,20 +12,24 @@ class ExploreScreen extends StatefulWidget {
 
 class _ExploreScreenState extends State<ExploreScreen> {
   List<dynamic> _locations = [];
+  DataItem? _closestStation; // Variable to store the closest station
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final dataProvider = Provider.of<DataProvider>(context);
     if (!dataProvider.isLoading) {
-      updateMarkers(dataProvider.data);
+      updateMarkers(dataProvider.data ,dataProvider.closestStationData);
     }
   }
 
-  void updateMarkers(List<dynamic> locations) {
+  void updateMarkers(List<dynamic> locations , DataItem? Nearest) {
     setState(() {
       _locations = locations;
+       _closestStation = Nearest;
+
     });
+    // print(_closestStation!.station);
   }
 
   final List<String> diseases = [
@@ -196,13 +201,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               isLocationSafe!
                                   ? 'The location is safe for ${selectedDisease} conditions.'
                                   : 'The location is not safe for ${selectedDisease} conditions.',
-                              style: TextStyle(color: Colors.white, fontSize: 18),
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 18),
                             ),
                             SizedBox(height: 8),
                             if (selectedDisease != null)
                               Text(
                                 diseaseRecommendations[selectedDisease!]!,
-                                style: TextStyle(color: Colors.white, fontSize: 16),
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 16),
                               ),
                           ],
                         ),

@@ -16,17 +16,21 @@ class MapWidget extends StatefulWidget {
 class _MapWidgetState extends State<MapWidget> {
   List<Marker> _markers = [];
 
+  DataItem? _closestLocation; // Variable to store the closest station
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Listen for changes in the DataProvider
     final dataProvider = Provider.of<DataProvider>(context);
     if (!dataProvider.isLoading) {
-      updateMarkers(dataProvider.data);
+      updateMarkers(dataProvider.data, dataProvider.closestStationData);
     }
   }
 
-  void updateMarkers(List<DataItem> locations) {
+  void updateMarkers(List<dynamic> locations, DataItem? Nearest) {
+    setState(() {
+      _closestLocation = Nearest;
+    });
     List<Marker> markers = [];
     locations.forEach((item) {
       final lat = item.latitude;
@@ -72,6 +76,38 @@ class _MapWidgetState extends State<MapWidget> {
           ),
         );
       }
+if (_closestLocation != null) {
+  markers.add(
+    Marker(
+      height: 20,
+      width: 100,
+      point: LatLng(_closestLocation!.latitude + 0.01, _closestLocation!.longitude),
+      builder: (ctx) => Container(
+              height: 20,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color.fromARGB(226, 160, 160, 160),
+                    blurRadius: 0.2,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+                border: Border.all(color: Colors.blue, width: 1),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: Text(
+                'Nearest Station',
+                style: TextStyle(fontSize: 10, color: Colors.black ,fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+            ),
+         
+    ),
+  );
+}
+
     });
 
     setState(() {
@@ -116,9 +152,13 @@ class _MapWidgetState extends State<MapWidget> {
         } else {
           return FlutterMap(
             options: MapOptions(
-              center: LatLng(22.0, 77.0),
-              zoom: 5.5,
-              interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate, // Disable rotation
+              center: _closestLocation != null
+                  ? LatLng(
+                      _closestLocation!.latitude, _closestLocation!.longitude)
+                  : LatLng(22, 77.0),
+              zoom: _closestLocation != null ? 10.0 : 5.5,
+              interactiveFlags: InteractiveFlag.all &
+                  ~InteractiveFlag.rotate, // Disable rotation
               maxBounds: LatLngBounds(
                 LatLng(8.0, 68.0), // Southwest corner of India
                 LatLng(37.0, 97.0), // Northeast corner of India
@@ -126,7 +166,8 @@ class _MapWidgetState extends State<MapWidget> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate:
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                 subdomains: ['a', 'b', 'c'],
               ),
               MarkerLayer(

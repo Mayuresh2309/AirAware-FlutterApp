@@ -1,25 +1,26 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
-import 'package:airaware/homepage/widgets/map.dart';
 import 'package:flutter/material.dart';
-import 'package:airaware/Explorepage/explore.dart';
-import 'package:airaware/Statpage/stats.dart';
+import 'package:geolocator/geolocator.dart';
+
 import 'data_model.dart';
+
 class DataProvider with ChangeNotifier {
-  List<DataItem> _data = []; // Updated to List<DataItem>
+  List<DataItem> _data = [];
+  DataItem? _closestStationData; // Add this variable
   bool _isLoading = true;
 
-  List<DataItem> get data => _data; // Add this getter
+  List<DataItem> get data => _data;
   bool get isLoading => _isLoading;
+  DataItem? get closestStationData => _closestStationData; // Add this getter
 
   Future<void> fetchData() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      List<DataItem> result =
-          await apidata(); // Ensure this returns List<DataItem>
+      List<DataItem> result = await apidata();
       _data = result;
     } catch (error) {
       print("Error: $error");
@@ -29,50 +30,55 @@ class DataProvider with ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
+
+  Future<void> findClosestStation(Position position) async {
+    if (_data.isEmpty) {
+      await fetchData(); // Ensure data is fetched before finding the closest station
+    }
+
+    double minDistance = double.infinity;
+    DataItem? closestStation;
+
+    for (var item in _data) {
+      double distance = Geolocator.distanceBetween(
+        position.latitude,
+        position.longitude,
+        item.latitude,
+        item.longitude,
+      );
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestStation = item;
+      }
+    }
+
+    _closestStationData = closestStation;
+    notifyListeners();
+  }
 }
+
 Future<List<DataItem>> apidata() async {
-  // print("check 1");
-  // Sample key
-  // const api="579b464db66ec23bdd0000011c4b6fb8f22e4da36019aceed9576683"; //2nd api
   const api = "579b464db66ec23bdd00000139aeb6041bfa4c7263cda886ed404225";
   final offset = 0;
   final limit = 1000;
   final List<Future<List<dynamic>>> promises = [];
-  // print("achahhahaha jiiiii");
-  // Access the StatsScreen state using the global key and call updateMarkers
-  // if (statsKey.currentState != null) {
-  // }
 
   for (int i = 0; i < 4; i++) {
     promises.add(getData(api, offset + i * 1000, limit).then((data) {
-      // print(data);
       return data;
     }).catchError((error) {
       print("Error: $error");
-      return []; // Return an empty list in case of an error to avoid breaking Future.wait
+      return [];
     }));
   }
-Map<String, dynamic> convertMap(Map<dynamic, dynamic> inputMap) {
-  Map<String, dynamic> outputMap = {};
 
-  inputMap.forEach((key, value) {
-    outputMap[key.toString()] = value;
-  });
-
-  return outputMap;
-}
   return Future.wait(promises).then((arrayOfData) {
     final combined = combineUniqueById(arrayOfData.expand((i) => i).toList());
-    // mapWidgetKey.currentState?.updateMarkers(combined);
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   statsKey.currentState?.updateMarkers(combined);
-    // });
-    // print(combined[0]);
-
     return combined.map((item) => DataItem.fromJson(item)).toList();
   }).catchError((error) {
     print("Error: $error");
-    return []; // Return an empty list in case of an error
+    return [];
   });
 }
 
@@ -106,28 +112,21 @@ Future<List<dynamic>> getData(String api, int offset, int limit) async {
 }
 
 List<dynamic> combineUniqueById(List<dynamic> arrays) {
-  // print("check 3");
   final uniqueIds = Set();
   final repeatedIds = Set();
-
-  // Organizing the data by station and including constant fields
   final stationData = {};
 
   arrays.forEach((item) {
     final id = item['id'];
-    // Check if the ID has been encountered before
     if (uniqueIds.contains(id)) {
-      repeatedIds.add(id); // Add to repeated IDs set
+      repeatedIds.add(id);
     } else {
-      uniqueIds.add(id); // Add to unique IDs set
+      uniqueIds.add(id);
     }
 
-    // Store pollutant data under the station
     final station = item['station'];
-    // print("check 4");
 
     if (stationData[station] == null) {
-      // Create an entry for the station including constant fields
       stationData[station] = {
         'country': item['country'],
         'state': item['state'],
@@ -139,11 +138,10 @@ List<dynamic> combineUniqueById(List<dynamic> arrays) {
         'aqi': 0,
         'max': 0,
         'maxele': "none",
-        'pollutants':
-            {}, // Initialize pollutants object to store pollutant data
+        'pollutants': {},
       };
     }
-    // Store pollutant data under the station
+
     final pollutantId = item['pollutant_id'];
 
     if (stationData[station]['pollutants'][pollutantId] == null) {
@@ -177,7 +175,6 @@ List<dynamic> combineUniqueById(List<dynamic> arrays) {
     item!['maxele'] = maxele(item['pollutants'], item['aqi']);
   });
 
-  // Sort stations alphabetically based on state, city, and station4
   final sortedStations = stationData.values.toList()
     ..sort((a, b) {
       if (a['state'] != b['state']) {
@@ -187,20 +184,17 @@ List<dynamic> combineUniqueById(List<dynamic> arrays) {
       } else {
         return a['station'].compareTo(b['station']);
       }
-      // return 0; // Return 0 if properties are equal
     });
 
-  // Assign IDs to the sorted stations
   final stationsWithIds = sortedStations.asMap().entries.map((entry) {
     final index = entry.key;
     final station = entry.value;
     return {
-      'id': index + 1, // Assigning IDs starting from 1
+      'id': index + 1,
       ...station,
     };
   }).toList();
 
-  // Compute unique and repeated city names
   final uniqueCities = Set();
   final repeatedCities = Set();
   stationsWithIds.forEach((item) {
@@ -216,10 +210,8 @@ List<dynamic> combineUniqueById(List<dynamic> arrays) {
 }
 
 int calmax(Map<dynamic, dynamic>? pollutants) {
-  // print("check 8");
-// return 0;
   if (pollutants == null)
-    return -1; // or handle null case according to your logic
+    return -1;
   final AQICO = (pollutants['CO'] as Map<String, dynamic>?)?['pollutant_max'] !=
           null
       ? (pollutants['CO'] as Map<String, dynamic>?)!['pollutant_max']! / 1000
@@ -248,7 +240,6 @@ int calmax(Map<dynamic, dynamic>? pollutants) {
   ];
 
   if (AQIPM10 == 0 && AQIPM25 == 0) {
-    // print("check 17");
     return -1;
   }
 
@@ -256,7 +247,6 @@ int calmax(Map<dynamic, dynamic>? pollutants) {
 }
 
 String maxele(Map<dynamic, dynamic> pollutants, int max) {
-  // print("check 10");
   if (pollutants['CO']?['pollutant_max'] != null &&
       max == pollutants['CO']?['pollutant_max'] / 1000) {
     return "co";
