@@ -239,7 +239,7 @@ int calmax(Map<dynamic, dynamic>? pollutants) {
     AQISO2.toDouble(),
   ];
 
-  if (AQIPM10 == 0 && AQIPM25 == 0) {
+  if (AQIPM10 <= 0 && AQIPM25 <= 0) {
     return -1;
   }
 
@@ -247,6 +247,9 @@ int calmax(Map<dynamic, dynamic>? pollutants) {
 }
 
 String maxele(Map<dynamic, dynamic> pollutants, int max) {
+  if(max <= 0){
+    return "none";
+  };
   if (pollutants['CO']?['pollutant_max'] != null &&
       max == pollutants['CO']?['pollutant_max'] / 1000) {
     return "co";

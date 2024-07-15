@@ -5,8 +5,12 @@ import 'package:airaware/homepage/home.dart';
 import 'package:airaware/backend/jstodart.dart';
 
 class BottomTab extends StatefulWidget {
-  const BottomTab({super.key});
-
+  // const BottomTab({super.key});
+  final Function getLocationAndFetchData;
+  const BottomTab({
+    Key? key,
+    required this.getLocationAndFetchData,
+  }) : super(key: key);
   @override
   State<BottomTab> createState() => _BottomTabState();
 }
@@ -14,25 +18,25 @@ class BottomTab extends StatefulWidget {
 class _BottomTabState extends State<BottomTab> {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
+  late List<Widget> _widgetOptions;
 
-  static final List<Widget> _widgetOptions = <Widget>[
-    Home(),
-    ExploreScreen(),
-    StatsScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    apidata();
+
+    _widgetOptions = <Widget>[
+      Home(getLocationAndFetchData: widget.getLocationAndFetchData),
+      ExploreScreen(),
+      StatsScreen(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
     _pageController.jumpToPage(index);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    // Call the function to fetch data and update markers when the widget is first created
-    apidata();
   }
 
   @override

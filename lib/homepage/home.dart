@@ -6,11 +6,18 @@ import 'package:airaware/homepage/widgets/map.dart';
 import 'package:airaware/backend/jstodart.dart';
 
 class Home extends StatefulWidget {
+  final Function getLocationAndFetchData;
+  const Home({
+    Key? key,
+    required this.getLocationAndFetchData,
+  }) : super(key: key);
   @override
   _HomeState createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,7 +28,7 @@ class _HomeState extends State<Home> {
           Expanded(
             child: Stack(
               children: [
-                MapWidget(),
+                MapWidget(getLocationAndFetchData: widget.getLocationAndFetchData),
                 // Add other widgets here, like
                 // Sheet(),
                 Nav(),

@@ -37,7 +37,6 @@ class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
-
 class _HomeScreenState extends State<HomeScreen> {
   late DataProvider dataProvider;
   late LocationService locationService;
@@ -66,12 +65,15 @@ class _HomeScreenState extends State<HomeScreen> {
         if (dataProvider.isLoading) {
           return Center(child: CircularProgressIndicator());
         } else {
-          return BottomTab();
+          return BottomTab(
+            getLocationAndFetchData: _getLocationAndFetchData,
+          );
         }
       },
     );
   }
 }
+
 
 
 
