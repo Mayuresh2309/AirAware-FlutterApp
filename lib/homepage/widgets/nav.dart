@@ -13,6 +13,8 @@ class Nav extends StatefulWidget {
 
 class _NavState extends State<Nav> {
   List<dynamic> _locations = [];
+  List<dynamic> _navlocations = [];
+
   final TextEditingController _searchController = TextEditingController();
   String? selectedLocation;
   DataItem? _closestStation;
@@ -30,6 +32,14 @@ class _NavState extends State<Nav> {
     setState(() {
       _locations = locations;
       _closestStation = Nearest;
+      if (Nearest != null) {
+        _navlocations =
+            locations.where((element) => element.city == Nearest.city).toList();
+      } else {
+        locations
+            .where((element) => element.city.toString() == "Mumbai")
+            .toList();
+      }
     });
   }
 
@@ -41,7 +51,14 @@ class _NavState extends State<Nav> {
               .toLowerCase()
               .contains(selectedLocation!.toLowerCase()))
           .toList();
-
+      setState(() {
+        if (selectedLocation != null) {
+          _navlocations = _locations
+              .where((element) =>
+                  element.city.toString() == filteredLocations[0].city)
+              .toList();
+        }
+      });
       if (filteredLocations.isNotEmpty) {
         Sheet.showModalBottomSheetWithData(context, filteredLocations[0]);
       } else {
@@ -72,6 +89,19 @@ class _NavState extends State<Nav> {
     } else {
       return Color.fromARGB(255, 0, 0, 0); // Black
     }
+  }
+
+  String _getLocationLabel() {
+    if (selectedLocation != null) {
+      final parts = selectedLocation!.split(',');
+      if (parts.length > 1) {
+        return parts[1];
+      }
+    }
+    if (_closestStation != null) {
+      return _closestStation!.city;
+    }
+    return "Mumbai";
   }
 
   @override
@@ -183,10 +213,9 @@ class _NavState extends State<Nav> {
           ),
           child: Row(
             children: [
-              Container(
-                width: 100,
-                decoration: BoxDecoration(
-                  color: Colors.red,
+              Chip(
+                label: Text(
+                  _getLocationLabel(),
                 ),
               ),
               Expanded(
@@ -195,49 +224,27 @@ class _NavState extends State<Nav> {
                       .infinity, // Ensure the ListView takes up the full height of the parent Container
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    itemCount: _locations.length,
+                    itemCount: _navlocations.length,
                     itemBuilder: (context, index) {
-                      final item = _locations[index];
+                      final item = _navlocations[index];
                       final station = item.station;
                       final int aqi = item.aqi;
                       final lat = item.latitude;
                       final lon = item.longitude;
                       final state = item.state;
                       final processedStation = station.split(',')[0];
-                      if(_closestStation!=null && ( _closestStation!.city.toString() != station.toString())){
-                        return null;
-                      }
+
                       return IntrinsicWidth(
                         child: Container(
-                          // width:
-                          //  fit-content, // Set a width to ensure items are properly sized horizontally
-                          margin:
-                              EdgeInsets.symmetric(vertical: 0, horizontal: 5),
-                          // decoration: BoxDecoration(
-                          //   borderRadius: BorderRadius.circular(12.0),
-                          //   color: getAqiInfo(aqi),
-                          // ),
-                          child: Chip(label: Text(processedStation))
-                          // ListTile(
-                          //   contentPadding: EdgeInsets.symmetric(
-                          //       vertical: 1, horizontal: 8),
-                          //   title: Text(
-                          //     processedStation, // Display the processed station name
-                          //     style: TextStyle(
-                          //       fontWeight: FontWeight.bold,
-                          //       fontSize: 15,
-                          //       color: Colors.white,
-                          //     ),
-                          //   ),
-                            // subtitle: Text(
-                            //   '$state \nAQI: $aqi\nLat: $lat, Lon: $lon',
-                            //   style: TextStyle(color: Colors.white70),
+                            // width:
+                            //  fit-content, // Set a width to ensure items are properly sized horizontally
+                            margin: EdgeInsets.symmetric(
+                                vertical: 0, horizontal: 5),
+                            // decoration: BoxDecoration(
+                            //   borderRadius: BorderRadius.circular(12.0),
+                            //   color: getAqiInfo(aqi),
                             // ),
-                            // leading: Icon(Icons.location_on, color: Colors.white),
-                            // trailing:
-                            //     Icon(Icons.arrow_forward, color: Colors.white),
-                          // ),
-                        ),
+                            child: Chip(label: Text(processedStation))),
                       );
                     },
                   ),
