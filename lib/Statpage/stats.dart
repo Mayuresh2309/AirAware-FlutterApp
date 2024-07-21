@@ -233,7 +233,10 @@ class _StatsScreenState extends State<StatsScreen> {
                     offset: Offset(0, 2),
                   ),
                 ],
-                border: Border.all(color:getAqiInfo(_closestStation!.aqi) , width: 4),
+                border: _closestStation != null
+                    ? Border.all(
+                        color: getAqiInfo(_closestStation!.aqi), width: 4)
+                    : Border.all(color: Colors.grey, width: 4),
               ),
               child: ListTile(
                 contentPadding:
